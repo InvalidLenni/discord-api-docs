@@ -468,7 +468,7 @@ There are multiple message types that have a message_reference object.  Since me
 - These messages have `message_id` and `channel_id`, and `guild_id` if it is in a guild, with data of the message that was replied to. The channel_id and guild_id will be the same as the reply.
 - Replies are created by including a message_reference when sending a message. When sending, only `message_id` is required.
 
-###### Thread starter messsage
+###### Thread starter message
 
 - These are the first message in a public thread.  They point back to the message in the parent channel from which the thread was started (type 21)
 - These messages have `message_id`, `channel_id`, and `guild_id`.
@@ -534,7 +534,7 @@ A thread member is used to indicate whether a user has joined a thread or not.
 | join_timestamp | ISO8601 timestamp | the time the current user last joined the thread                |
 | flags          | integer           | any user-thread settings, currently only used for notifications |
 
-** \* These fields are ommitted on the member sent within each thread in the [GUILD_CREATE](#DOCS_TOPICS_GATEWAY/guild-create) event **
+** \* These fields are omitted on the member sent within each thread in the [GUILD_CREATE](#DOCS_TOPICS_GATEWAY/guild-create) event **
 
 ### Embed Object
 
@@ -627,6 +627,24 @@ Embed types are "loosely defined" and, for the most part, are not used by our cl
 | name    | string  | name of the field                               |
 | value   | string  | value of the field                              |
 | inline? | boolean | whether or not this field should display inline |
+
+###### Embed Limits
+
+To facilitate showing rich content, rich embeds do not follow the traditional limits of message content. However, some limits are still in place to prevent excessively large embeds. The following table describes the limits:
+
+All of the following limits are measured inclusively. Leading and trailing whitespace characters are not included (they are trimmed automatically).
+
+| Field                                                                      | Limit                                                                                |
+|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| title                                                                      | 256 characters                                                                       |
+| description                                                                | 4096 characters                                                                      |
+| fields                                                                     | Up to 25 [field](#DOCS_RESOURCES_CHANNEL/embed-object-embed-field-structure) objects |
+| [field.name](#DOCS_RESOURCES_CHANNEL/embed-object-embed-field-structure)   | 256 characters                                                                       |
+| [field.value](#DOCS_RESOURCES_CHANNEL/embed-object-embed-field-structure)  | 1024 characters                                                                      |
+| [footer.text](#DOCS_RESOURCES_CHANNEL/embed-object-embed-footer-structure) | 2048 characters                                                                      |
+| [author.name](#DOCS_RESOURCES_CHANNEL/embed-object-embed-author-structure) | 256 characters                                                                       |
+
+Additionally, the combined sum of characters in all `title`, `description`, `field.name`, `field.value`, `footer.text`, and `author.name` fields across all embeds attached to a message must not exceed 6000 characters. Violating any of these constraints will result in a `Bad Request` response.
 
 ### Attachment Object
 
@@ -762,26 +780,6 @@ user 125 in the content.
 }
 ```
 
-## Embed Limits
-
-To facilitate showing rich content, rich embeds do not follow the traditional limits of message content. However, some limits are still in place to prevent excessively large embeds. The following table describes the limits:
-
-###### Limits
-
-All of the following limits are measured inclusively. Leading and trailing whitespace characters are not included (they are trimmed automatically).
-
-| Field                                                                      | Limit                                                                                |
-|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| title                                                                      | 256 characters                                                                       |
-| description                                                                | 4096 characters                                                                      |
-| fields                                                                     | Up to 25 [field](#DOCS_RESOURCES_CHANNEL/embed-object-embed-field-structure) objects |
-| [field.name](#DOCS_RESOURCES_CHANNEL/embed-object-embed-field-structure)   | 256 characters                                                                       |
-| [field.value](#DOCS_RESOURCES_CHANNEL/embed-object-embed-field-structure)  | 1024 characters                                                                      |
-| [footer.text](#DOCS_RESOURCES_CHANNEL/embed-object-embed-footer-structure) | 2048 characters                                                                      |
-| [author.name](#DOCS_RESOURCES_CHANNEL/embed-object-embed-author-structure) | 256 characters                                                                       |
-
-Additionally, the combined sum of characters in all `title`, `description`, `field.name`, `field.value`, `footer.text`, and `author.name` fields across all embeds attached to a message must not exceed 6000 characters. Violating any of these constraints will result in a `Bad Request` response.
-
 ## Get Channel % GET /channels/{channel.id#DOCS_RESOURCES_CHANNEL/channel-object}
 
 Get a channel by ID. Returns a [channel](#DOCS_RESOURCES_CHANNEL/channel-object) object.  If the channel is a thread, a [thread member](#DOCS_RESOURCES_CHANNEL/thread-member-object) object is included in the returned result.
@@ -804,7 +802,7 @@ Fires a [Channel Update](#DOCS_TOPICS_GATEWAY/channel-update) Gateway event.
 
 ###### JSON Params (Guild channel)
 
-Requires the `MANAGE_CHANNELS` permission for the guild. Fires a [Channel Update](#DOCS_TOPICS_GATEWAY/channel-update) Gateway event. If modifying a category, individual [Channel Update](#DOCS_TOPICS_GATEWAY/channel-update) events will fire for each child channel that also changes. If modifying permission overwrites, the `MANAGE_ROLES` permission is required. Only permissions your bot has in the guild or channel can be allowed/denied (unless your bot has a `MANAGE_ROLES` overwrite in the channel).
+Requires the `MANAGE_CHANNELS` permission for the guild. Fires a [Channel Update](#DOCS_TOPICS_GATEWAY/channel-update) Gateway event. If modifying a category, individual [Channel Update](#DOCS_TOPICS_GATEWAY/channel-update) events will fire for each child channel that also changes. If modifying permission overwrites, the `MANAGE_ROLES` permission is required. Only permissions your bot has in the guild or parent channel (if applicable) can be allowed/denied (unless your bot has a `MANAGE_ROLES` overwrite in the channel).
 
 | Field                         | Type                                                                            | Description                                                                                                                                                                     | Channel Type             |
 |-------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------|
@@ -1033,7 +1031,7 @@ Any message IDs given that do not exist or are invalid will count towards the mi
 
 ## Edit Channel Permissions % PUT /channels/{channel.id#DOCS_RESOURCES_CHANNEL/channel-object}/permissions/{overwrite.id#DOCS_RESOURCES_CHANNEL/overwrite-object}
 
-Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the `MANAGE_ROLES` permission. Only permissions your bot has in the guild or channel can be allowed/denied (unless your bot has a `MANAGE_ROLES` overwrite in the channel). Returns a 204 empty response on success. For more information about permissions, see [permissions](#DOCS_TOPICS_PERMISSIONS/permissions).
+Edit the channel permission overwrites for a user or role in a channel. Only usable for guild channels. Requires the `MANAGE_ROLES` permission. Only permissions your bot has in the guild or parent channel (if applicable) can be allowed/denied (unless your bot has a `MANAGE_ROLES` overwrite in the channel). Returns a 204 empty response on success. For more information about permissions, see [permissions](#DOCS_TOPICS_PERMISSIONS/permissions).
 
 > info
 > This endpoint supports the `X-Audit-Log-Reason` header.
